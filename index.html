@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chance</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 12px;
+            padding-bottom: 80px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            margin-bottom: 12px;
+            background: #111;
+            border-radius: 12px;
+            padding: 10px 16px;
+        }
+        .header .user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header .user .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .header .user .name { font-size: 14px; font-weight: bold; }
+        .header .stats { display: flex; gap: 12px; font-size: 13px; }
+        .header .stats span { color: #ffd700; }
+        .tab-bar {
+            display: flex;
+            justify-content: space-around;
+            background: #111;
+            border-radius: 12px;
+            padding: 8px 0;
+            margin-bottom: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .tab-bar .tab {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .tab-bar .tab.active {
+            color: #ff6b6b;
+            background: #1a1a2e;
+        }
+        .tab-bar .tab .icon { font-size: 20px; display: block; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .case-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .case-card {
+            background: #111;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2d2d5e;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .case-card:active { transform: scale(0.95); }
+        .case-card .icon { font-size: 32px; display: block; margin-bottom: 6px; }
+        .case-card .name { font-size: 14px; font-weight: bold; }
+        .case-card .price { font-size: 12px; color: #ffd700; margin: 4px 0; }
+        .case-card .chance { font-size: 11px; color: #aaa; }
+        .btn {
+            background: #ff6b6b;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-demo {
+            background: #2d2d5e;
+            border: none;
+            border-radius: 10px;
+            padding: 8px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 4px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            border: 1px solid #ff6b6b;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            text-align: center;
+            color: #fff;
+            max-width: 90%;
+        }
+        .toast.show { opacity: 1; }
+        .inventory-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .inv-item {
+            background: #111;
+            border: 1px solid #2d2d5e;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .deposit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .deposit-btn {
+            background: #1a1a2e;
+            border: 1px solid #2d2d5e;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .deposit-btn .amount { font-size: 18px; font-weight: bold; color: #ffd700; }
+        .deposit-btn .price { font-size: 12px; color: #aaa; }
+        .ref-link {
+            background: #111;
+            border-radius: 10px;
+            padding: 12px;
+            word-break: break-all;
+            font-size: 13px;
+            color: #aaa;
+            margin-top: 8px;
+            border: 1px solid #2d2d5e;
+        }
+        .game-card {
+            background: #111;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2d2d5e;
+            text-align: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .game-card:active { transform: scale(0.97); }
+        .game-card .icon { font-size: 28px; }
+        .game-card .name { font-size: 15px; font-weight: bold; }
+        .game-card .desc { font-size: 12px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="user">
+        <div class="avatar">A</div>
+        <span class="name">Artem</span>
+    </div>
+    <div class="stats">
+        <span>⭐ <span id="starsDisplay">0</span></span>
+        <span>💎 <span id="gramsDisplay">0</span></span>
+    </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+    <div class="tab active" onclick="switchTab('cases')"><span class="icon">📦</span>Кейсы</div>
+    <div class="tab" onclick="switchTab('inventory')"><span class="icon">🎒</span>Инвентарь</div>
+    <div class="tab" onclick="switchTab('deposit')"><span class="icon">💳</span>Пополнение</div>
+    <div class="tab" onclick="switchTab('referral')"><span class="icon">👥</span>Рефералы</div>
+    <div class="tab" onclick="switchTab('contests')"><span class="icon">🏆</span>Конкурсы</div>
+</div>
+
+<!-- SECTION: КЕЙСЫ -->
+<div id="section-cases" class="section active">
+    <h3 style="margin-bottom:10px;">📦 Кейсы</h3>
+    <div class="case-grid">
+        <!-- Кейс 1: Бомж -->
+        <div class="case-card" onclick="openCase('bomj')">
+            <span class="icon">🧟</span>
+            <div class="name">Бомж</div>
+            <div class="price">⭐ 5</div>
+            <div class="chance">Шанс: 0% (ДЕМО: 1.5%)</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+        <!-- Кейс 2: BEAR -->
+        <div class="case-card" onclick="openCase('bear')">
+            <span class="icon">🐻</span>
+            <div class="name">BEAR</div>
+            <div class="price">⭐ 15</div>
+            <div class="chance">Мишка 40% | NFT 0% | Ничего 60%</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+        <!-- Кейс 3: Премиум -->
+        <div class="case-card" onclick="openCase('premium')">
+            <span class="icon">💎</span>
+            <div class="name">Премиум</div>
+            <div class="price">⭐ 25</div>
+            <div class="chance">BEAR 30% | NFT 20% | 💎 50%</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+        <!-- Кейс 4: Легенда -->
+        <div class="case-card" onclick="openCase('legend')">
+            <span class="icon">👑</span>
+            <div class="name">Легенда</div>
+            <div class="price">⭐ 50</div>
+            <div class="chance">NFT 15% | BEAR 25% | 💎 60%</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+        <!-- Кейс 5: Космос -->
+        <div class="case-card" onclick="openCase('cosmos')">
+            <span class="icon">🌌</span>
+            <div class="name">Космос</div>
+            <div class="price">⭐ 75</div>
+            <div class="chance">NFT 20% | BEAR 20% | 💎 60%</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+        <!-- Кейс 6: Алмаз -->
+        <div class="case-card" onclick="openCase('diamond')">
+            <span class="icon">💠</span>
+            <div class="name">Алмаз</div>
+            <div class="price">⭐ 100</div>
+            <div class="chance">NFT 30% | BEAR 10% | 💎 60%</div>
+            <button class="btn">Открыть</button>
+            <button class="btn-demo">Демо</button>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: ИНВЕНТАРЬ -->
+<div id="section-inventory" class="section">
+    <h3>🎒 Инвентарь</h3>
+    <div class="inventory-grid" id="inventoryList">
+        <span style="color:#666;font-size:13px;">У тебя пока ничего нет</span>
+    </div>
+</div>
+
+<!-- SECTION: ПОПОЛНЕНИЕ -->
+<div id="section-deposit" class="section">
+    <h3>💳 Пополнение</h3>
+    <div class="deposit-grid">
+        <div class="deposit-btn" onclick="deposit(100, 10)"><div class="amount">100 ⭐</div><div class="price">10 ₽</div></div>
+        <div class="deposit-btn" onclick="deposit(300, 25)"><div class="amount">300 ⭐</div><div class="price">25 ₽</div></div>
+        <div class="deposit-btn" onclick="deposit(600, 50)"><div class="amount">600 ⭐</div><div class="price">50 ₽</div></div>
+        <div class="deposit-btn" onclick="deposit(1000, 80)"><div class="amount">1000 ⭐</div><div class="price">80 ₽</div></div>
+        <div class="deposit-btn" onclick="deposit(2000, 150)"><div class="amount">2000 ⭐</div><div class="price">150 ₽</div></div>
+        <div class="deposit-btn" onclick="deposit(5000, 350)"><div class="amount">5000 ⭐</div><div class="price">350 ₽</div></div>
+    </div>
+</div>
+
+<!-- SECTION: РЕФЕРАЛЫ -->
+<div id="section-referral" class="section">
+    <h3>👥 Реферальная система</h3>
+    <p style="color:#aaa;font-size:13px;">Приглашай друзей и получай бонусы!</p>
+    <div class="ref-link" id="refLink">https://t.me/ваш_бот?start=ref_123</div>
+    <button class="btn" onclick="copyRef()">📋 Копировать ссылку</button>
+    <p style="margin-top:8px;color:#aaa;font-size:13px;">👥 Приглашено: <span id="refCount">0</span> человек</p>
+</div>
+
+<!-- SECTION: КОНКУРСЫ -->
+<div id="section-contests" class="section">
+    <h3>🏆 Конкурсы</h3>
+    <div style="background:#111;border-radius:12px;padding:16px;border:1px solid #2d2d5e;margin-bottom:10px;">
+        <p style="font-weight:bold;">🎁 Розыгрыш 1000 ⭐</p>
+        <p style="color:#aaa;font-size:13px;">Участвуй и выиграй 1000 звёзд!</p>
+        <button class="btn" onclick="joinContest()">✅ Участвовать</button>
+    </div>
+    <div style="background:#111;border-radius:12px;padding:16px;border:1px solid #2d2d5e;">
+        <p style="font-weight:bold;">💎 Конкурс NFT</p>
+        <p style="color:#aaa;font-size:13px;">Разыгрывается редкий NFT!</p>
+        <button class="btn" onclick="joinContest()">✅ Участвовать</button>
+    </div>
+</div>
+
+<script>
+    let stars = 0;
+    let grams = 0;
+    let inventory = [];
+    let refs = 0;
+
+    const tg = window.Telegram?.WebApp;
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timeout);
+        t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function updateUI() {
+        document.getElementById('starsDisplay').textContent = stars;
+        document.getElementById('gramsDisplay').textContent = grams;
+        const list = document.getElementById('inventoryList');
+        if (inventory.length === 0) {
+            list.innerHTML = '<span style="color:#666;font-size:13px;">У тебя пока ничего нет</span>';
+        } else {
+            list.innerHTML = inventory.map(item => 
+                `<span class="inv-item">${item.icon || '🎴'} ${item.name}</span>`
+            ).join('');
+        }
+        document.getElementById('refCount').textContent = refs;
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('section-' + tab).classList.add('active');
+        document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+        if (tg) tg.HapticFeedback?.impactOccurred('light');
+    }
+
+    function openCase(type) {
+        if (tg) tg.HapticFeedback?.impactOccurred('medium');
+        let result = '';
+        let win = false;
+        let item = null;
+
+        // ДЕМО-РЕЖИМ (всегда открывается)
+        const demo = true;
+
+        if (type === 'bomj') {
+            // БОМЖ: шанс 1.5% в демо
+            const chance = demo ? 1.5 : 0;
+            if (Math.random() * 100 < chance) {
+                const nftStars = Math.floor(Math.random() * 1000) + 1;
+                item = { name: `NFT (${nftStars}⭐)`, icon: '🎴' };
+                win = true;
+                result = `🎉 Ты выиграл NFT на ${nftStars} ⭐!`;
+            } else {
+                result = '😞 Пусто! Попробуй ещё.';
+            }
+        } else if (type === 'bear') {
+            const rand = Math.random() * 100;
+            if (rand < 40) {
+                const bearNames = ['🐻 BEAR Классик', '🐻‍❄️ BEAR Полярный', '🐼 BEAR Панда', '🧸 BEAR Плюшевый'];
+                item = { name: bearNames[Math.floor(Math.random() * bearNames.length)], icon: '🐻' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else if (rand < 40) {
+                result = '😞 Ничего не выпало!';
+            } else {
+                result = '😞 Ничего не выпало!';
+            }
+        } else if (type === 'premium') {
+            const rand = Math.random() * 100;
+            if (rand < 30) {
+                const bears = ['🐻 BEAR Золотой', '🐻‍❄️ BEAR Ледяной', '🐼 BEAR Космический'];
+                item = { name: bears[Math.floor(Math.random() * bears.length)], icon: '🐻' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else if (rand < 50) {
+                item = { name: `NFT (${Math.floor(Math.random()*200)+50}⭐)`, icon: '🎴' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else {
+                const diamonds = Math.floor(Math.random() * 50) + 10;
+                item = { name: `💎 ${diamonds} граммов`, icon: '💎' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            }
+        } else if (type === 'legend') {
+            const rand = Math.random() * 100;
+            if (rand < 15) {
+                item = { name: `NFT (${Math.floor(Math.random()*500)+100}⭐)`, icon: '🎴' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else if (rand < 40) {
+                const bears = ['🐻 BEAR Легенда', '🐻‍❄️ BEAR Король'];
+                item = { name: bears[Math.floor(Math.random() * bears.length)], icon: '🐻' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else {
+                const diamonds = Math.floor(Math.random() * 100) + 20;
+                item = { name: `💎 ${diamonds} граммов`, icon: '💎' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            }
+        } else if (type === 'cosmos') {
+            const rand = Math.random() * 100;
+            if (rand < 20) {
+                item = { name: `NFT (${Math.floor(Math.random()*300)+50}⭐)`, icon: '🎴' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else if (rand < 40) {
+                const bears = ['🐻 BEAR Космос', '🐻‍❄️ BEAR Звёздный'];
+                item = { name: bears[Math.floor(Math.random() * bears.length)], icon: '🐻' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else {
+                const diamonds = Math.floor(Math.random() * 80) + 15;
+                item = { name: `💎 ${diamonds} граммов`, icon: '💎' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            }
+        } else if (type === 'diamond') {
+            const rand = Math.random() * 100;
+            if (rand < 30) {
+                item = { name: `NFT (${Math.floor(Math.random()*500)+100}⭐)`, icon: '🎴' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else if (rand < 40) {
+                const bears = ['🐻 BEAR Алмаз', '🐻‍❄️ BEAR Бриллиант'];
+                item = { name: bears[Math.floor(Math.random() * bears.length)], icon: '🐻' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            } else {
+                const diamonds = Math.floor(Math.random() * 120) + 30;
+                item = { name: `💎 ${diamonds} граммов`, icon: '💎' };
+                win = true;
+                result = `🎉 Ты выиграл ${item.name}!`;
+            }
+        }
+
+        if (win && item) {
+            inventory.push(item);
+            if (item.icon === '💎') {
+                const gramsWin = parseInt(item.name.match(/\d+/)[0] || 0);
+                grams += gramsWin;
+            } else if (item.icon === '🎴') {
+                const starsWin = parseInt(item.name.match(/\d+/)[0] || 0);
+                stars += starsWin;
+            }
+            // Добавляем +1 звезду за открытие
+            stars += 1;
+        } else {
+            // Демо-режим: всё равно даём 1 звезду за попытку
+            stars += 1;
+        }
+
+        updateUI();
+        showToast(result || '📦 Кейс открыт!');
+
+        if (tg) {
+            tg.sendData(JSON.stringify({
+                action: 'case',
+                type: type,
+                result: result,
+                stars: stars,
+                grams: grams,
+                inventory: inventory.length
+            }));
+        }
+    }
+
+    function deposit(starsAmount, price) {
+        if (tg) tg.HapticFeedback?.impactOccurred('heavy');
+        showToast(`💳 Пополнение на ${starsAmount} ⭐ за ${price} ₽ (демо)`);
+        stars += starsAmount;
+        updateUI();
+    }
+
+    function copyRef() {
+        const link = document.getElementById('refLink').textContent;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(link);
+            showToast('📋 Ссылка скопирована!');
+        } else {
+            showToast('📋 Ссылка: ' + link);
+        }
+    }
+
+    function joinContest() {
+        if (tg) tg.HapticFeedback?.impactOccurred('light');
+        showToast('✅ Ты участвуешь в конкурсе!');
+    }
+
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.HapticFeedback = tg.HapticFeedback || { impactOccurred: () => {} };
+    }
+
+    // Демо-данные для красоты
+    updateUI();
+</script>
+</body>
+</html>
